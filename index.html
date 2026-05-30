@@ -1,8 +1,219 @@
 <!DOCTYPE html>
-<html>
-  <div style="text-align:center;font-size:70px;"><img src="logo.png" width="110" height="250"></div>
-<h1 style="text-align:center;font-size:20px;">@Gamex2.0</h1>
-<hr>
-<body style="background:url(bg.png)"></body>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>J.A.R.V.I.S. Mobile</title>
+    <!-- Tailwind CSS for styling -->
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <style>
+        /* Futuristic Arc Reactor pulse animation */
+        @keyframes pulse-ring {
+            0% { transform: scale(0.95); opacity: 0.5; }
+            50% { transform: scale(1.1); opacity: 0.8; }
+            100% { transform: scale(0.95); opacity: 0.5; }
+        }
+        .arc-active {
+            animation: pulse-ring 2s infinite ease-in-out;
+            box-shadow: 0 0 30px #06b6d4, inset 0 0 20px #06b6d4;
+        }
+    </style>
+</head>
+<body class="bg-slate-950 text-cyan-400 font-sans min-h-screen flex flex-col justify-between p-6 overflow-hidden">
 
+    <!-- Top Status Header -->
+    <header class="flex justify-between items-center border-b border-cyan-900/50 pb-4">
+        <div>
+            <h1 class="text-xs tracking-widest uppercase opacity-70">System Status</h1>
+            <p id="system-status" class="text-sm font-mono text-emerald-400">● ONLINE / READY</p>
+        </div>
+        <div class="text-right">
+            <span class="text-xs block opacity-50 font-mono">V_3.5.FLASH</span>
+        </div>
+    </header>
+
+    <!-- Main Output / Transcript Area -->
+    <main class="flex-1 flex flex-col justify-center items-center text-center px-4 my-8 space-y-6">
+        <div class="w-full max-w-md bg-slate-900/40 border border-cyan-500/20 rounded-xl p-4 min-h-32 flex flex-col justify-center">
+            <span class="text-xs uppercase tracking-wider text-cyan-500/50 block mb-2 font-mono">— User Transcript —</span>
+            <p id="user-transcript" class="text-lg text-slate-300 italic">"Tap the core and speak..."</p>
+        </div>
+
+        <div class="w-full max-w-md bg-slate-900/60 border border-cyan-400/30 rounded-xl p-4 min-h-40 flex flex-col justify-center">
+            <span class="text-xs uppercase tracking-wider text-cyan-400/50 block mb-2 font-mono">— J.A.R.V.I.S. —</span>
+            <p id="jarvis-response" class="text-xl font-light text-cyan-200 tracking-wide">Awaiting your command, creator.</p>
+        </div>
+    </main>
+
+    <!-- Bottom Controls & Interactivity -->
+    <footer class="flex flex-col items-center justify-center pb-8 space-y-4">
+        <!-- The Core Interface Button -->
+        <button id="action-btn" class="w-28 h-28 rounded-full bg-slate-900 border-4 border-cyan-500 flex items-center justify-center transition-all duration-300 active:scale-95 shadow-lg shadow-cyan-500/20">
+            <div id="arc-reactor" class="w-20 h-20 rounded-full bg-cyan-950 border border-cyan-400 flex items-center justify-center">
+                <span class="text-xs tracking-tighter uppercase font-black text-cyan-400">JARVIS</span>
+            </div>
+        </button>
+        <p id="tap-instruction" class="text-xs tracking-widest uppercase opacity-60 font-mono">TAP TO COMMUNICATE</p>
+    </footer>
+
+    <!-- Configuration Overlay for API Key -->
+    <div id="config-panel" class="fixed inset-0 bg-slate-950/95 flex flex-col justify-center items-center p-6 z-50">
+        <div class="w-full max-w-sm space-y-4 border border-cyan-500/30 p-6 rounded-2xl bg-slate-900/50 backdrop-blur">
+            <h2 class="text-lg font-bold uppercase tracking-wider text-center">Security Authentication</h2>
+            <p class="text-xs text-slate-400 text-center">To initiate Jarvis's matrix, enter your API token.</p>
+            <input type="password" id="api-key-input" placeholder="Enter Gemini or OpenAI API Key" class="w-full bg-slate-950 border border-cyan-500/50 rounded p-2 text-cyan-300 text-center font-mono focus:outline-none focus:border-cyan-400">
+            <button id="save-key-btn" class="w-full bg-cyan-500 hover:bg-cyan-600 text-slate-950 font-bold p-2 rounded uppercase text-sm tracking-wider transition-colors">Initialize Systems</button>
+        </div>
+    </div>
+
+    <script>
+        // DOM Elements
+        const actionBtn = document.getElementById('action-btn');
+        const arcReactor = document.getElementById('arc-reactor');
+        const userTranscript = document.getElementById('user-transcript');
+        const jarvisResponse = document.getElementById('jarvis-response');
+        const statusText = document.getElementById('system-status');
+        const configPanel = document.getElementById('config-panel');
+        const apiKeyInput = document.getElementById('api-key-input');
+        const saveKeyBtn = document.getElementById('save-key-btn');
+
+        let apiKey = localStorage.getItem('jarvis_api_key');
+        let recognition;
+        let isListening = false;
+
+        // Verify API Key existence
+        if (apiKey) {
+            configPanel.classList.add('hidden');
+        }
+
+        saveKeyBtn.addEventListener('click', () => {
+            const key = apiKeyInput.value.trim();
+            if (key) {
+                localStorage.setItem('jarvis_api_key', key);
+                apiKey = key;
+                configPanel.classList.add('hidden');
+                speak("Systems initialized. Welcome back, creator.");
+            }
+        });
+
+        // Initialize Web Speech API (Speech to Text)
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        if (SpeechRecognition) {
+            recognition = new SpeechRecognition();
+            recognition.continuous = false; // Stop listening once user stops speaking
+            recognition.lang = 'en-US';
+            recognition.interimResults = false;
+
+            recognition.onstart = () => {
+                isListening = true;
+                statusText.innerText = "● LISTENING...";
+                statusText.className = "text-sm font-mono text-cyan-400";
+                arcReactor.classList.add('arc-active');
+                userTranscript.innerText = "Listening...";
+            };
+
+            recognition.onerror = (e) => {
+                console.error(e);
+                resetUI();
+            };
+
+            recognition.onend = () => {
+                isListening = false;
+                resetUI();
+            };
+
+            recognition.onresult = async (event) => {
+                const speechToText = event.results[0][0].transcript;
+                userTranscript.innerText = `"${speechToText}"`;
+                
+                // Process through LLM Core
+                statusText.innerText = "● THINKING...";
+                statusText.className = "text-sm font-mono text-amber-400";
+                
+                const reply = await queryJarvisBrain(speechToText);
+                
+                jarvisResponse.innerText = reply;
+                speak(reply);
+            };
+        } else {
+            alert("Web Speech API is not supported on this mobile browser. Try Safari iOS or Google Chrome Mobile.");
+        }
+
+        // Toggle action trigger
+        actionBtn.addEventListener('click', () => {
+            if (!apiKey) {
+                configPanel.classList.remove('hidden');
+                return;
+            }
+            if (isListening) {
+                recognition.stop();
+            } else {
+                // Audio context trick for iOS background sound play policy
+                window.speechSynthesis.cancel(); 
+                recognition.start();
+            }
+        });
+
+        function resetUI() {
+            statusText.innerText = "● ONLINE / READY";
+            statusText.className = "text-sm font-mono text-emerald-400";
+            arcReactor.classList.remove('arc-active');
+        }
+
+        // The Brain: Calling the LLM (Example uses a generic structure adaptable to OpenAI/Gemini standard endpoints)
+        async function queryJarvisBrain(prompt) {
+            try {
+                // System instructions to enforce the "Jarvis" persona
+                const systemPrompt = "You are J.A.R.V.I.S., a witty, highly advanced, loyal AI voice assistant inspired by Iron Man. Address the user as 'Sir', 'Ma'am', or 'Creator'. Keep answers conversational, elegant, concise (under 3 sentences), and practical for voice output.";
+
+                // Default implementation using an Open-AI compatible or direct endpoint
+                // (Change URL depending on whether you use OpenAI, Gemini, or a proxy server)
+                const response = await fetch('https://api.openai.com/v1/chat/completions', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${apiKey}`
+                    },
+                    body: JSON.stringify({
+                        model: 'gpt-4o-mini', // or your target model choice
+                        messages: [
+                            { role: 'system', content: systemPrompt },
+                            { role: 'user', content: prompt }
+                        ],
+                        max_tokens: 150
+                    })
+                });
+
+                const data = await response.json();
+                return data.choices[0].message.content;
+            } catch (error) {
+                console.error(error);
+                return "Forgive me, creator. An anomaly occurred while processing within my neural matrix.";
+            }
+        }
+
+        // Text to Speech (Jarvis Speaks)
+        function speak(text) {
+            const utterance = new SpeechSynthesisUtterance(text);
+            
+            // Mobile Browser voice tuning
+            const voices = window.speechSynthesis.getVoices();
+            // Try to find a deep/sophisticated sounding British male voice if available
+            const jarvisVoice = voices.find(voice => voice.lang.includes('en-GB') && voice.name.toLowerCase().includes('male')) || voices[0];
+            
+            if (jarvisVoice) utterance.voice = jarvisVoice;
+            utterance.pitch = 0.9; // Lower pitch slightly for an assertive tone
+            utterance.rate = 1.0;  // Normal pacing
+            
+            statusText.innerText = "● SPEAKING...";
+            statusText.className = "text-sm font-mono text-purple-400";
+            
+            utterance.onend = () => {
+                resetUI();
+            };
+
+            window.speechSynthesis.speak(utterance);
+        }
+    </script>
+</body>
 </html>
