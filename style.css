@@ -1,3 +1,66 @@
 body {
-  background-color: lightblue;
+  background-color: black;
+  color:white;
 }
+
+    *{
+      font-family: "Oswald", sans-serif;
+    }
+    
+     hr {
+      border: 0;
+      height: 1px;
+      background: #333;
+      margin: 20px 0;
+    }
+
+   
+ 
+    .vid{
+      text-align:center;
+    margin-top:20px;
+    }
+    .button { 
+      flex: 1;
+      text-align: center;
+      font-size: 1.5vh;
+      font-weight: bold;
+      text-decoration: none;
+      background-color: #5208AD;
+      color: white;
+      padding : 1vh 2vw;
+      border-radius: 1vh;
+      text-transform: capitalize;  
+    justify-content: space-between;
+      margin-bottom: 20px;
+      margin-top:10vh;
+    }
+    .link{
+      font-size:20px; 
+      background-color:red;
+      padding:5px 30px;
+      color:white;
+      margin-left:10px;
+      border-radius:6px;
+      text-decoration:none;
+      text-transform:capitalize;
+      font-weight:bold;
+    }
+    p{
+      font-size:40px;
+      font-weight:700;
+    }
+        .dlink { 
+      flex: 1;
+      text-align: center;
+      font-size: 2vh;
+      font-weight: bold;
+      text-decoration: none;
+      background-color: #5208AD;
+      color: white;
+      padding : 10px 25px;
+      border-radius: 6px;
+      text-transform: capitalize;  
+    justify-content: space-between;
+      
+    }
